@@ -11,4 +11,8 @@ As part of the conversion to .NET, the TableReader now requires that the encodin
 
 This version does take advantage of the functionality of the CLR and adds a lot of accessory methods to both coders.  The TextDecoder now has the ability to decode fixed-length strings, even those at separate intervals.  Both coders now have methods which will return the direct results of the coding rather than retrieving the result from a referenced object.  And, both coders now support mass conversion rather than working one line at a time.
 
+## Build Instructions
+Currently the build process consists of opening the solution file in either MonoDevelop or Visual Studio and building the project from there.  Before building, make sure you have the latest version of Nuget so that all depencies get resolved successfully.  The solution has been successfully built in both VS2013 and MonoDevelop.
+
 ## How To Use
+Coming

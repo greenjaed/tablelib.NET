@@ -44,7 +44,7 @@ namespace TableLib_Test
         public void EntriesHaveCorrectEncoding()
         {
             var reader = new TableReader(TableReaderType.ReadTypeDump);
-            reader.OpenTable("table.shift-jis", "shift-jis");
+            reader.OpenTable("../../table.shift-jis", "shift-jis");
             Assert.Equal(true, reader.LookupValue.ContainsValue("あ"));
         }
 

@@ -16,10 +16,12 @@ namespace TableLib
 		}
 
         /// <summary>
-        /// sets a value indicating whether this <see cref="TableLib.TextDecoder"/> will stop on a bad linked entry.
+        /// sets a value indicating whether this <see cref="TableLib.TextDecoder"/> will stop on an undefined character.
+        /// <value><c>true</c> if you wish to stop decoding on an undefined character; otherwise, <c>false</c>. Default is <c>false</c></value>
+        /// <remarks>When an undefined byte is encountered when decoding a string and this is set to true, the undefined byte is consumed.
+        /// The value returned by <see cref="TableLib.TextDecoder.DecodeString"/> will still return the number of bytes decoded and will not include the consumed byte.</remarks>
         /// </summary>
-        /// <value><c>true</c> if you wish to stop decoding on a bad link entry; otherwise, <c>false</c>. Default is <c>false</c></value>
-        public bool StopOnBadLink { set; private get; }
+        public bool StopOnUndefinedCharacter { get; set; }
 
         /// <summary>
         /// Sets the length of the string to decode.  Used for fixed length strings
@@ -78,7 +80,6 @@ namespace TableLib
 		{
             StringOffset = 1;
             StringLength = 1;
-            StopOnBadLink = false;
 			tempbuf = new List<char>();
 			Table = new TableReader(TableReaderType.ReadTypeDump);
 		}
@@ -126,7 +127,7 @@ namespace TableLib
         public string DecodeFixedLengthString()
         {
             string decodedString = String.Empty;
-            if (DecodeString(ref decodedString, String.Empty, Math.Min(StringLength, tempbuf.Count)) < 0 && StopOnBadLink)
+            if (DecodeString(ref decodedString, String.Empty, Math.Min(StringLength, tempbuf.Count)) < 0)
             {
                 decodedString = String.Empty;
             }
@@ -183,7 +184,7 @@ namespace TableLib
         public string DecodeString (string endString)
         {
             string temp = string.Empty;
-            if (DecodeString(ref temp, endString) < 0 && StopOnBadLink)
+            if (DecodeString(ref temp, endString) < 0)
             {
                 temp = String.Empty;
             }
@@ -239,7 +240,7 @@ namespace TableLib
                     else if (Table.LinkedEntries.ContainsKey(hexstr))
                     {
                         LinkedEntry l = Table.LinkedEntries[hexstr];
-                        int hexBytes = l.Number * 2;
+                        int hexBytes = l.Text.Length + l.Number * 2;
                         if (hexBytes <= sizeLeft)
                         {
                             textString += l.Text;
@@ -260,6 +261,11 @@ namespace TableLib
                 }
 
 				if (i == 0) {
+                    if (StopOnUndefinedCharacter)
+                    {
+                        tempbuf.RemoveRange(0, 2);
+                        break;
+                    }
 					textString += "<$" + tempbuf[hexoff] + tempbuf[hexoff + 1] + ">";
 					hexoff += 2;
 				}

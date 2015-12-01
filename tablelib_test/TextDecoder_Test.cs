@@ -13,6 +13,15 @@ namespace tablelib_test
         //test for linked entries
         public TextDecoder_Test()
         {
+            using (StreamWriter tableWriter = new StreamWriter("test.tbl"))
+            {
+                tableWriter.WriteLine("00=e");
+                tableWriter.WriteLine("0001=E");
+                tableWriter.WriteLine("01=s");
+                tableWriter.WriteLine("02=t");
+                tableWriter.WriteLine("/03=0");
+                tableWriter.WriteLine("$05=i,1");
+            }
         }
 
         [Fact]
@@ -25,14 +34,16 @@ namespace tablelib_test
         }
 
         [Theory]
-        [InlineData (new byte[] { 2, 0, 1, 2, 4, 3, 5 }, "0", 6, "tEt<$04>0")]
-        [InlineData (new byte[] { 2, 0, 3, 1, 2 }, "0", 3, "te0")]
-        [InlineData (new byte[] { 2, 0, 3, 1, 2 }, "", 5, "te0st")]
-        [InlineData (new byte[] { 0, 0, 1, 1 }, "s", 4, "eEs")]
-        [InlineData (new byte[] { 5, 0, 1}, "s", 3, "i<$00>s")]
-        public void NormalDecode(byte[] encodedString, string endString, int readBytes, string expectedString)
+        [InlineData (new byte[] { 2, 0, 1, 2, 4, 3, 5 }, "0", 6, "tEt<$04>0", false)]
+        [InlineData (new byte[] { 2, 0, 3, 1, 2 }, "0", 3, "te0", false)]
+        [InlineData (new byte[] { 2, 0, 3, 1, 2 }, "", 5, "te0st", false)]
+        [InlineData (new byte[] { 0, 0, 1, 1 }, "s", 4, "eEs", false)]
+        [InlineData (new byte[] { 5, 0, 1}, "s", 3, "i<$00>s", false)]
+        [InlineData (new byte[] { 1, 2, 2, 4, 0, 1, 2 }, "", 3, "stt", true)]
+        public void NormalDecode(byte[] encodedString, string endString, int readBytes, string expectedString, bool stopOnUndefinedChar)
         {
             TextDecoder decoder = initDecoder();
+            decoder.StopOnUndefinedCharacter = stopOnUndefinedChar;
             decoder.SetHexBlock(encodedString);
             string decodedString = string.Empty;
             int parsedCharacters = decoder.DecodeString(ref decodedString, endString);
@@ -81,20 +92,19 @@ namespace tablelib_test
             Assert.Equal("e", results);
         }
 
+        [Fact]
+        public void DecodingStopsOnBadLink()
+        {
+            var decoder = initDecoder();
+            decoder.SetHexBlock(new byte[] { 5 });
+            string temp = string.Empty;
+            Assert.Equal(-1, decoder.DecodeString(ref temp, string.Empty));
+        }
+
         private TextDecoder initDecoder()
         {
-            string tableFile = "test.tbl";
-            using (StreamWriter tableWriter = new StreamWriter(tableFile))
-            {
-                tableWriter.WriteLine("00=e");
-                tableWriter.WriteLine("0001=E");
-                tableWriter.WriteLine("01=s");
-                tableWriter.WriteLine("02=t");
-                tableWriter.WriteLine("/03=0");
-                tableWriter.WriteLine("$05=i,1");
-            }
             TextDecoder decoder = new TextDecoder();
-            decoder.OpenTable(tableFile);
+            decoder.OpenTable("test.tbl");
             return decoder;
         }
     }

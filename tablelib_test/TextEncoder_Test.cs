@@ -9,6 +9,19 @@ namespace tablelib_test
 {
     public class TextEncoder_Test
     {
+        public TextEncoder_Test()
+        {
+            using (StreamWriter tableWriter = new StreamWriter( "test.tbl"))
+            {
+                tableWriter.WriteLine("00=e");
+                tableWriter.WriteLine("01=s");
+                tableWriter.WriteLine("02=t");
+                tableWriter.WriteLine("/03=0");
+                tableWriter.WriteLine("04=ste");
+                tableWriter.WriteLine("$05=i,1");
+            }
+        }
+
         [Fact]
         public void UninitializedRun()
         {
@@ -58,18 +71,8 @@ namespace tablelib_test
 
         private TextEncoder initEncoder()
         {
-            string tableFile = "test.tbl";
-            using (StreamWriter tableWriter = new StreamWriter(tableFile))
-            {
-                tableWriter.WriteLine("00=e");
-                tableWriter.WriteLine("01=s");
-                tableWriter.WriteLine("02=t");
-                tableWriter.WriteLine("/03=0");
-                tableWriter.WriteLine("04=ste");
-                tableWriter.WriteLine("$05=i,1");
-            }
             TextEncoder encoder = new TextEncoder();
-            encoder.OpenTable(tableFile);
+            encoder.OpenTable("test.tbl");
             return encoder;
         }
     }

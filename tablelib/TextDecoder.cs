@@ -157,14 +157,15 @@ namespace TableLib
         public IEnumerable<string> GetDecodedStrings(string endString)
         {
             string decodedString = String.Empty;
+            int consumedBytes = 0;
             do
             {
-                decodedString = DecodeString(endString);
-                if (!string.IsNullOrEmpty(decodedString))
+                consumedBytes = DecodeString(ref decodedString, endString);
+                if (consumedBytes >= 0)
                 {
                     yield return decodedString;
                 }
-            } while (!string.IsNullOrEmpty(decodedString));
+            } while (consumedBytes >= 0 && tempbuf.Count > 0);
         }
 
         /// <summary>

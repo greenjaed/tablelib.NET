@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TableLib
 {
@@ -35,7 +36,7 @@ namespace TableLib
                     throw new ArgumentOutOfRangeException("StringLength", "StringLength must be greater than 0");
                 }
 
-                stringLength = value * 2;
+                stringLength = value;
 
                 if (StringOffset < stringLength)
                 {
@@ -56,12 +57,11 @@ namespace TableLib
         public int StringOffset {
             set
             {
-                int temp = value * 2;
-                if (temp < stringLength)
+                if (value < stringLength)
                 {
                     throw new ArgumentOutOfRangeException("StringOffset", "StringOffset cannot be smaller than StringLength");
                 }
-                stringOffset = temp;
+                stringOffset = value;
             }
             private get
             {
@@ -70,7 +70,19 @@ namespace TableLib
         }
         private int stringOffset;
 
-		private List<char> tempbuf;
+        /// <summary>
+        /// Gets a value determining if the hex block is empty or not.
+        /// <value>Returns <c>True</c> is the decoder has finished reading the block or it has not been set and <c>False</c> otherwise.</value>
+        /// </summary>
+        public bool BlockEmpty
+        {
+            get
+            {
+                return tempbuf.Count == 0;
+            }
+        }
+
+		private List<string> tempbuf;
 		private TableReader Table;
 
         /// <summary>
@@ -80,18 +92,18 @@ namespace TableLib
 		{
             StringOffset = 1;
             StringLength = 1;
-			tempbuf = new List<char>();
+			tempbuf = new List<string>();
 			Table = new TableReader(TableReaderType.ReadTypeDump);
 		}
 
         /// <summary>
         /// Gets all the decoded fixed length string.
         /// </summary>
-        /// <returns>The decoded fixed length strings in an IEnumerable.</returns>
         /// <param name="tableName">The table name.</param>
         /// <param name="hexBlock">The Hex block to decode.</param>
         /// <param name="stringLength">The string length.</param>
         /// <param name="stringOffset">The s6tring offset.</param>
+        /// <returns>The decoded fixed length strings in an IEnumerable.</returns>
         public IEnumerable<string> GetDecodedFixedLengthStrings(string tableName, byte[] hexBlock, int stringLength, int stringOffset)
         {
             OpenTable(tableName);
@@ -121,27 +133,27 @@ namespace TableLib
         /// <summary>
         /// Decodes a fixed length string.
         /// </summary>
-        /// <returns>The fixed length string.</returns>
         /// <param name="length">The Length of the string.</param>
         /// <param name="offset">The distance between strings measured from the start of the strings.</param>
+        /// <returns>The fixed length string.</returns>
         public string DecodeFixedLengthString()
         {
-            string decodedString = String.Empty;
-            if (DecodeString(ref decodedString, String.Empty, Math.Min(StringLength, tempbuf.Count)) < 0)
+            List<string> decodedString = new List<string>();
+            if (DecodeString(decodedString, String.Empty, Math.Min(StringLength, tempbuf.Count)) < 0)
             {
-                decodedString = String.Empty;
+                decodedString.Clear();
             }
             tempbuf.RemoveRange(0, Math.Min(StringOffset - StringLength, tempbuf.Count));
-            return decodedString;
+            return string.Concat(decodedString);
         }
 
         /// <summary>
         /// Gets the decoded strings.
         /// </summary>
-        /// <returns>The decoded strings in an IEnumerable.</returns>
         /// <param name="tableName">The name of the table.</param>
         /// <param name="hexBlock">The Hex block to decode</param>
         /// <param name="endString">Signified the end of a string.</param>
+        /// <returns>The decoded strings in an IEnumerable.</returns>
         public IEnumerable<string> GetDecodedStrings(string tableName, byte[] hexBlock, string endString)
         {
             Table.OpenTable(tableName);
@@ -152,20 +164,62 @@ namespace TableLib
         /// <summary>
         /// Gets the decoded strings.
         /// </summary>
-        /// <returns>The decoded strings in an IEnumerable.</returns>
         /// <param name="endString">The string which indicates the end of a string.</param>
+        /// <returns>The decoded strings in an IEnumerable.</returns>
         public IEnumerable<string> GetDecodedStrings(string endString)
         {
-            string decodedString = String.Empty;
+            string decodedString;
             int consumedBytes = 0;
             do
             {
+                decodedString = String.Empty;
                 consumedBytes = DecodeString(ref decodedString, endString);
                 if (consumedBytes >= 0)
                 {
                     yield return decodedString;
                 }
             } while (consumedBytes >= 0 && tempbuf.Count > 0);
+        }
+
+        /// <summary>
+        /// Gets all decoded strings as lists of chars
+        /// </summary>
+        /// <param name="endString">The string which indicates the end of a string.</param>
+        /// <returns>Returns an IEnumerable containing a list of all decoded chars</returns>
+        public IEnumerable<List<string>> GetAllDecodedChars(string endString)
+        {
+            List<string> decodedCharacters = new List<string>();
+            int consumedBytes = 0;
+            do
+            {
+                decodedCharacters.Clear();
+                consumedBytes = DecodeString(decodedCharacters, endString, tempbuf.Count);
+                if (consumedBytes >= 0)
+                {
+                    yield return decodedCharacters;
+                }
+            } while (consumedBytes >= 0 && tempbuf.Count > 0);
+        }
+
+        /// <summary>
+        /// Decodes a string as a list of chars
+        /// </summary>
+        /// <returns>The decoded string as a list of chars</returns>
+        public List<string> DecodeChars()
+        {
+            return DecodeChars(string.Empty);
+        }
+
+        /// <summary>
+        /// Decodes a string as a list of chars
+        /// </summary>
+        /// <param name="endString">The string which indicates the end of string</param>
+        /// <returns>The decoded string as a list of chars</returns>
+        public List<string> DecodeChars(string endString)
+        {
+            List<string> decodedCharacters = new List<string>();
+            DecodeString(decodedCharacters, endString, tempbuf.Count);
+            return decodedCharacters;
         }
 
         /// <summary>
@@ -201,10 +255,13 @@ namespace TableLib
         /// <param name="endString">The string which indicates the end of a string.</param>
         public int DecodeString (ref string textString, string endString)
         {
-            return DecodeString(ref textString, endString, tempbuf.Count);
+            List<string> decodedCharacters = new List<string>();
+            int bytesDecoded = DecodeString(decodedCharacters, endString, tempbuf.Count);
+            textString = string.Concat(decodedCharacters);
+            return bytesDecoded;
         }
 
-        private int DecodeString (ref string textString, string endString, int hexSize)
+        private int DecodeString (List<string> textString, string endString, int hexSize)
 		{
 			int hexoff = 0;
             string hexstr = string.Empty;
@@ -218,40 +275,38 @@ namespace TableLib
 
 			while (hexoff < hexSize)
             {
-                for (i = Math.Min(Table.LongestHex * 2, hexSize - hexoff); i > 0; i -= 2)
+                for (i = Math.Min(Table.LongestHex, hexSize - hexoff); i > 0; --i)
                 {
                     int sizeLeft = tempbuf.Count - hexoff;
-                    char[] hexArray = new char[Math.Min(sizeLeft, i)];
-                    tempbuf.CopyTo(hexoff, hexArray, 0, hexArray.Length);
-                    hexstr = new string(hexArray);
+                    hexstr = string.Concat(tempbuf.GetRange(hexoff, Math.Min(sizeLeft, i)));
 
                     if (Table.LookupValue.ContainsKey(hexstr))
                     {
                         textstr = Table.LookupValue[hexstr];
-                        textString += textstr;
-                        hexoff += hexstr.Length;
+                        textString.Add(textstr);
+                        hexoff += hexstr.Length / 2;
 
                         if (textstr == endString)
                         {
                             tempbuf.RemoveRange(0, hexoff);
-                            return (hexoff >> 1);
+                            return (hexoff);
                         }
                         break;
                     }
                     else if (Table.LinkedEntries.ContainsKey(hexstr))
                     {
                         LinkedEntry l = Table.LinkedEntries[hexstr];
-                        int hexBytes = l.Text.Length + l.Number * 2;
+                        int hexLength = hexstr.Length / 2;
+                        int hexBytes = hexLength + l.Number;
                         if (hexBytes <= sizeLeft)
                         {
-                            textString += l.Text;
-                            hexoff += hexstr.Length;
+                            textString.Add(l.Text);
+                            hexoff += hexLength;
                             for (int j = 0; j < l.Number; ++j)
                             {
-                                textString += "<$" + tempbuf[hexoff + j * 2] +
-                                    tempbuf[hexoff + j * 2 + 1] + ">";
+                                textString.Add("<$" + tempbuf[hexoff + j] + ">");
                             }
-                            hexoff += l.Number * 2;
+                            hexoff += l.Number;
                         }
                         else
                         {
@@ -264,16 +319,16 @@ namespace TableLib
 				if (i == 0) {
                     if (StopOnUndefinedCharacter)
                     {
-                        tempbuf.RemoveRange(0, 2);
+                        tempbuf.RemoveAt(0);
                         break;
                     }
-					textString += "<$" + tempbuf[hexoff] + tempbuf[hexoff + 1] + ">";
-					hexoff += 2;
+					textString.Add("<$" + tempbuf[hexoff] + ">");
+					++hexoff;
 				}
 			}
 
 			tempbuf.RemoveRange(0, hexoff);
-			return (hexoff >> 1);
+			return (hexoff);
 		}
 
         /// <summary>
@@ -282,16 +337,8 @@ namespace TableLib
         /// <param name="hexbuf">The bytes to be decoded</param>
 		public void	SetHexBlock (byte[] hexbuf)
 		{
-			string conbuf;
-
 			tempbuf.Clear();
-			tempbuf.Capacity = hexbuf.Length * 2;
-
-			for (int i =0; i < hexbuf.Length; ++i) {
-				conbuf = hexbuf[i].ToString("X2");
-				tempbuf.Add(conbuf[0]);
-				tempbuf.Add(conbuf[1]);
-			}
+            tempbuf.AddRange(hexbuf.Select(b => b.ToString("X2")));
 		}
 
         /// <summary>

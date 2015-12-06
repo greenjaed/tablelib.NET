@@ -218,8 +218,13 @@ namespace TableLib
         public List<string> DecodeChars(string endString)
         {
             List<string> decodedCharacters = new List<string>();
-            DecodeString(decodedCharacters, endString, tempbuf.Count);
+            DecodeChars(decodedCharacters, endString);
             return decodedCharacters;
+        }
+
+        public int DecodeChars(List<string> textString, string endString)
+        {
+            return DecodeString(textString, endString, tempbuf.Count);
         }
 
         /// <summary>

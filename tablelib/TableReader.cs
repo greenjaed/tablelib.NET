@@ -67,7 +67,7 @@ namespace TableLib
         /// </summary>
 		public List<TableError> TableErrors { get; private set; }
         /// <summary>
-        /// The longest hex string processed.
+        /// The longest hex string processed in bytes.
         /// </summary>
 		public int LongestHex { get; private set; }
         /// <summary>
@@ -437,9 +437,10 @@ namespace TableLib
 		
 		private void updateLongest (string hexstr, string ModString)
 		{
-            if (LongestHex < hexstr.Length)
+            int hexLength = hexstr.Length / 2;
+            if (LongestHex < hexLength)
             {
-                LongestHex = hexstr.Length;
+                LongestHex = hexLength;
             }
             if (ModString.Length > 0 && LongestText[(byte)ModString[0]] < ModString.Length)
             {

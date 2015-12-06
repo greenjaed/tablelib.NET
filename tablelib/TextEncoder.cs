@@ -147,7 +147,7 @@ namespace TableLib
                     if (Table.LookupValue.ContainsKey(subtextstr))
                     {
                         hexstr = Table.LookupValue[subtextstr];
-                        EncodedSize += hexstr.Length >> 1;
+                        EncodedSize += hexstr.Length;
 
                         if (Table.EndTokens.Contains(subtextstr))
                         {

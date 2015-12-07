@@ -9,7 +9,7 @@ In converting the library from c++ to c#, aside from the usual changing of data 
 
 As part of the conversion to .NET, the TableReader now requires that the encoding of the table file be specified.  Due to how .NET processes strings, the encoding is essential to ensuring the text is coded correctly.  The TableReader comes with a list of predefined encodings, but it also allows the user to provide custom encoding.
 
-This version does take advantage of the functionality of the CLR and adds a lot of accessory methods to both coders.  The TextDecoder now has the ability to decode fixed-length strings, even those at separate intervals.  Both coders now have methods which will return the direct results of the coding rather than retrieving the result from a referenced object.  And, both coders now support mass conversion rather than working one line at a time.
+This version does take advantage of the functionality of the CLR and adds a lot of accessory methods to both coders.  The TextDecoder now has the ability to decode fixed-length strings, even those at separate intervals.  It also includes methods for returning a list of the decoded characters rather than a raw string.  Both coders now have methods which will return the direct results of the coding rather than retrieving the result from a referenced object.  And, both coders now support mass conversion rather than working one line at a time.
 
 ## Build Instructions
 Currently the build process consists of opening the solution file in either MonoDevelop or Visual Studio and building the project from there.  Before building, make sure you have the latest version of Nuget so that all depencies get resolved successfully.  The solution has been successfully built in both VS2013 and MonoDevelop.

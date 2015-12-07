@@ -15,14 +15,15 @@ namespace TextScan
             string romName = string.Empty;
             string tableName = string.Empty;
             int validStringLength = 5;
-            string encoding = "utf-8";
+            string encodingName = "utf-8";
             string outputName = "output.txt";
             bool showHelp = false;
+            Encoding encoding;
 
             var options = new OptionSet()
             {
                 {"l|length=", "the minimum length for a valid string.  Default is 5", l => validStringLength = Convert.ToInt32(l) },
-                {"e|encoding=", "the encoding of the table file (e.g. shift-jis).  Default is utf-8", e => encoding = e },
+                {"e|encoding=", "the encoding of the table file (e.g. shift-jis).  Default is utf-8", e => encodingName = e },
                 {"h|help", "show this message", h => showHelp = h != null}
             };
 
@@ -73,7 +74,7 @@ namespace TextScan
 
             try
             {
-                Encoding.GetEncoding(encoding);
+                encoding = Encoding.GetEncoding(encodingName);
             }
             catch (Exception ex)
             {
@@ -87,10 +88,10 @@ namespace TextScan
             }
 
             var decoder = new TextDecoder();
-            decoder.OpenTable(tableName, encoding);
+            decoder.OpenTable(tableName, encodingName);
             decoder.SetHexBlock(File.ReadAllBytes(romName));
             decoder.StopOnUndefinedCharacter = true;
-            scanFile(decoder, validStringLength, outputName);
+            scanFile(decoder, validStringLength, outputName, encoding);
         }
 
         private static void showUsage(OptionSet options)
@@ -113,10 +114,10 @@ namespace TextScan
             return true;
         }
 
-        private static void scanFile(TextDecoder decoder, int stringLength, string outFile)
+        private static void scanFile(TextDecoder decoder, int stringLength, string outFile, Encoding encoding)
         {
             int filePosition = 0;
-            using (StreamWriter writer = new StreamWriter(outFile))
+            using (StreamWriter writer = new StreamWriter(outFile, false, encoding))
             {
                 foreach (var textString in decoder.GetDecodedStrings())
                 {

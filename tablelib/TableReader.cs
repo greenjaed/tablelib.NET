@@ -43,21 +43,6 @@ namespace TableLib
 	public enum TableReaderType { ReadTypeInsert, ReadTypeDump }
 
     /// <summary>
-    /// Table encoding.
-    /// </summary>
-    public enum TableEncoding
-    {
-        Ascii,
-        Gb18030,
-        ShiftJis,
-        Utf7,
-        Utf8,
-        Utf16,
-        Utf32,
-        Windows1252
-    }
-
-    /// <summary>
     /// Reads and parses a thingy table.
     /// </summary>
 	public class TableReader
@@ -114,34 +99,9 @@ namespace TableLib
             }
 		}
 
-        /// <summary>
-        /// Returns the string value for the given encoding.
-        /// </summary>
-        /// <returns>The encoding string.</returns>
-        /// <param name="encoding">The encoding.</param>
-        public static string EncodingString(TableEncoding encoding)
+        public bool OpenTable (string tableFileName, string encoding = "utf-8")
         {
-            switch (encoding)
-            {
-                case TableEncoding.Ascii:
-                    return "ascii";
-                case TableEncoding.Gb18030:
-                    return "GB18030";
-                case TableEncoding.ShiftJis:
-                    return "shift-jis";
-                case TableEncoding.Utf7:
-                    return "utf-7";
-                case TableEncoding.Utf8:
-                    return "utf-8";
-                case TableEncoding.Utf16:
-                    return "utf-16";
-                case TableEncoding.Utf32:
-                    return "utf-32";
-                case TableEncoding.Windows1252:
-                    return "windows-1252";
-                default:
-                    return "utf-8";
-            }
+            return OpenTable(tableFileName, Encoding.GetEncoding(encoding));
         }
 
         /// <summary>
@@ -150,12 +110,12 @@ namespace TableLib
         /// <returns><c>true</c>, if table was successfully processed, <c>false</c> otherwise.</returns>
         /// <param name="tableFileName">Table file name.</param>
         /// <param name="encoding">The character encoding of the table.  Defaults to <c>utf-8</c></param>
-		public bool OpenTable (string tableFileName, string encoding = "utf-8")
+		public bool OpenTable (string tableFileName, Encoding encoding)
 		{
 			LinkedList<string> entryList = new LinkedList<string>();
 
 			try {
-                var tableFile = File.ReadAllText(tableFileName, Encoding.GetEncoding(encoding))
+                var tableFile = File.ReadAllText(tableFileName, encoding)
                     .Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string line in tableFile)
                 {

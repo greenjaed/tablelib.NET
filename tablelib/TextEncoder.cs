@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace TableLib
 {
@@ -190,7 +191,7 @@ namespace TableLib
         /// <param name="tableFileName">The table file name.</param>
         public bool OpenTable (string tableFileName)
         {
-            return OpenTable(tableFileName, TableEncoding.Utf8);
+            return OpenTable(tableFileName, Encoding.UTF8);
         }
 
         /// <summary>
@@ -199,9 +200,9 @@ namespace TableLib
         /// <returns><c>true</c>, if table was opened successfully, <c>false</c> otherwise.</returns>
         /// <param name="tableFileName">The table file name.</param>
         /// <param name="encoding">The specified character encoding.</param>
-        public bool OpenTable (string tableFileName, TableEncoding encoding)
+        public bool OpenTable (string tableFileName, Encoding encoding)
         {
-            return OpenTable(tableFileName, TableReader.EncodingString(encoding));
+            return OpenTable(tableFileName, encoding);
         }
 
         /// <summary>

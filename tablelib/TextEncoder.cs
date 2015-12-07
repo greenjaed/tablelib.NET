@@ -202,7 +202,7 @@ namespace TableLib
         /// <param name="encoding">The specified character encoding.</param>
         public bool OpenTable (string tableFileName, Encoding encoding)
         {
-            return OpenTable(tableFileName, encoding);
+            return Table.OpenTable(tableFileName, encoding);
         }
 
         /// <summary>

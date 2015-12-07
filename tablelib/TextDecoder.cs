@@ -79,12 +79,20 @@ namespace TableLib
         {
             get
             {
-                return tempbuf.Count == 0;
+                return BytesLeft == 0;
             }
         }
 
 		private List<string> tempbuf;
 		private TableReader Table;
+        private int BufferPosition;
+        private int BytesLeft
+        {
+            get
+            {
+                return tempbuf.Count - BufferPosition;
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TableLib.TextDecoder"/> class.
@@ -140,11 +148,11 @@ namespace TableLib
         public string DecodeFixedLengthString()
         {
             List<string> decodedString = new List<string>();
-            if (DecodeString(decodedString, String.Empty, Math.Min(StringLength, tempbuf.Count)) < 0)
+            if (DecodeString(decodedString, String.Empty, Math.Min(StringLength, BytesLeft)) < 0)
             {
                 decodedString.Clear();
             }
-            tempbuf.RemoveRange(0, Math.Min(StringOffset - StringLength, tempbuf.Count));
+            BufferPosition += Math.Min(StringOffset - StringLength, BytesLeft);
             return string.Concat(decodedString);
         }
 
@@ -179,7 +187,7 @@ namespace TableLib
                 {
                     yield return decodedString;
                 }
-            } while (consumedBytes >= 0 && tempbuf.Count > 0);
+            } while (consumedBytes >= 0 && BytesLeft > 0);
         }
 
         /// <summary>
@@ -194,12 +202,12 @@ namespace TableLib
             do
             {
                 decodedCharacters.Clear();
-                consumedBytes = DecodeString(decodedCharacters, endString, tempbuf.Count);
+                consumedBytes = DecodeString(decodedCharacters, endString, BytesLeft);
                 if (consumedBytes >= 0)
                 {
                     yield return decodedCharacters;
                 }
-            } while (consumedBytes >= 0 && tempbuf.Count > 0);
+            } while (consumedBytes >= 0 && BytesLeft > 0);
         }
 
         /// <summary>
@@ -225,7 +233,7 @@ namespace TableLib
 
         public int DecodeChars(List<string> textString, string endString)
         {
-            return DecodeString(textString, endString, tempbuf.Count);
+            return DecodeString(textString, endString, BytesLeft);
         }
 
         /// <summary>
@@ -262,7 +270,7 @@ namespace TableLib
         public int DecodeString (ref string textString, string endString)
         {
             List<string> decodedCharacters = new List<string>();
-            int bytesDecoded = DecodeString(decodedCharacters, endString, tempbuf.Count);
+            int bytesDecoded = DecodeString(decodedCharacters, endString, BytesLeft);
             textString = string.Concat(decodedCharacters);
             return bytesDecoded;
         }
@@ -273,6 +281,7 @@ namespace TableLib
             string hexstr = string.Empty;
             string textstr = string.Empty;
 			int i = 0;
+            Func<int> currentPosition = () => hexoff + BufferPosition;
 
             if (hexSize == 0)
             {
@@ -283,8 +292,8 @@ namespace TableLib
             {
                 for (i = Math.Min(Table.LongestHex, hexSize - hexoff); i > 0; --i)
                 {
-                    int sizeLeft = tempbuf.Count - hexoff;
-                    hexstr = string.Concat(tempbuf.GetRange(hexoff, Math.Min(sizeLeft, i)));
+                    int sizeLeft = BytesLeft - hexoff;
+                    hexstr = string.Concat(tempbuf.GetRange(currentPosition(), Math.Min(sizeLeft, i)));
 
                     if (Table.LookupValue.ContainsKey(hexstr))
                     {
@@ -294,7 +303,7 @@ namespace TableLib
 
                         if (textstr == endString)
                         {
-                            tempbuf.RemoveRange(0, hexoff);
+                            BufferPosition += hexoff;
                             return (hexoff);
                         }
                         break;
@@ -310,7 +319,7 @@ namespace TableLib
                             hexoff += hexLength;
                             for (int j = 0; j < l.Number; ++j)
                             {
-                                textString.Add("<$" + tempbuf[hexoff + j] + ">");
+                                textString.Add("<$" + tempbuf[currentPosition() + j] + ">");
                             }
                             hexoff += l.Number;
                         }
@@ -325,15 +334,15 @@ namespace TableLib
 				if (i == 0) {
                     if (StopOnUndefinedCharacter)
                     {
-                        tempbuf.RemoveAt(0);
+                        ++BufferPosition;
                         break;
                     }
-					textString.Add("<$" + tempbuf[hexoff] + ">");
+					textString.Add("<$" + tempbuf[currentPosition()] + ">");
 					++hexoff;
 				}
 			}
 
-			tempbuf.RemoveRange(0, hexoff);
+			BufferPosition += hexoff;
 			return (hexoff);
 		}
 
@@ -345,6 +354,7 @@ namespace TableLib
 		{
 			tempbuf.Clear();
             tempbuf.AddRange(hexbuf.Select(b => b.ToString("X2")));
+            BufferPosition = 0;
 		}
 
         /// <summary>
@@ -365,7 +375,7 @@ namespace TableLib
         /// <param name="tableEncoding">The selected table encoding.</param>
         public bool OpenTable(string tableFileName, Encoding tableEncoding)
         {
-            return OpenTable(tableFileName, tableEncoding);
+            return Table.OpenTable(tableFileName, tableEncoding);
         }
 
         /// <summary>

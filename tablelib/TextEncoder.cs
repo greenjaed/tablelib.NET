@@ -65,22 +65,32 @@ namespace TableLib
         /// <summary>
         /// Encodes rawStrings as an IEnumerable of byte arrays
         /// </summary>
-        /// <returns>The encoded strings.</returns>
         /// <param name="tableName">The table file name.</param>
         /// <param name="addEndTokens">If set to <c>true</c>, add end tokens.</param>
         /// <param name="rawStrings">The collection of strings to encode.</param>
+        /// <returns>The encoded strings.</returns>
         public IEnumerable<byte[]> EncodeStream (string tableName, bool addEndTokens, IEnumerable<string> rawStrings)
         {
             OpenTable(tableName);
             AddEndToken = addEndTokens;
-            return rawStrings.Select(s => EncodeStream(s)).SelectMany(s => s);
+            return rawStrings.Select(s => EncodeStream(s)).SelectMany(b => b);
+        }
+
+        /// <summary>
+        /// Encodes rawStrings as an IEnumerable of byte arrays
+        /// </summary>
+        /// <param name="rawStrings">The collection of strings to encode.</param>
+        /// <returns></returns>
+        public IEnumerable<byte[]> EncodeStream(IEnumerable<string> rawStrings)
+        {
+            return rawStrings.Select(s => EncodeStream(s).SelectMany(b => b).ToArray());
         }
 
         /// <summary>
         /// Encodes the stream.
         /// </summary>
-        /// <returns>The encoded strings.</returns>
         /// <param name="scriptBuf">The string to encode.</param>
+        /// <returns>The encoded strings.</returns>
         public IEnumerable<byte[]> EncodeStream(string scriptBuf)
         {
             var start = StringTable.Count;
@@ -106,9 +116,9 @@ namespace TableLib
         /// <summary>
         /// Encodes a string.
         /// </summary>
-        /// <returns>The size of the encoded stream.</returns>
         /// <param name="scriptBuf">The string to encode.</param>
         /// <param name="BadCharOffset">The Bad char offset.</param>
+        /// <returns>The size of the encoded stream.</returns>
 		public int EncodeStream (string scriptBuf, ref int BadCharOffset)
 		{
 			TableString tablestring = new TableString();
@@ -187,8 +197,8 @@ namespace TableLib
         /// <summary>
         /// Opens the table.
         /// </summary>
-        /// <returns><c>true</c>, if table was opened successfully, <c>false</c> otherwise.</returns>
         /// <param name="tableFileName">The table file name.</param>
+        /// <returns><c>true</c>, if table was opened successfully, <c>false</c> otherwise.</returns>
         public bool OpenTable (string tableFileName)
         {
             return OpenTable(tableFileName, Encoding.UTF8);
@@ -197,9 +207,9 @@ namespace TableLib
         /// <summary>
         /// Opens the table.
         /// </summary>
-        /// <returns><c>true</c>, if table was opened successfully, <c>false</c> otherwise.</returns>
         /// <param name="tableFileName">The table file name.</param>
         /// <param name="encoding">The specified character encoding.</param>
+        /// <returns><c>true</c>, if table was opened successfully, <c>false</c> otherwise.</returns>
         public bool OpenTable (string tableFileName, Encoding encoding)
         {
             return Table.OpenTable(tableFileName, encoding);
@@ -208,12 +218,12 @@ namespace TableLib
         /// <summary>
         /// Opens the table.
         /// </summary>
-        /// <returns><c>true</c>, if table was opened, <c>false</c> otherwise.</returns>
         /// <param name="TableFileName">Table file name.</param>
         /// <param name="encoding">The name of the character encoding</param>
+        /// <returns><c>true</c>, if table was opened, <c>false</c> otherwise.</returns>
 		public bool OpenTable (string tableFileName, string encoding)
 		{
-			return Table.OpenTable(tableFileName, encoding);
+			return Table.OpenTable(tableFileName, Encoding.GetEncoding(encoding));
 		}
 
 		private void AddToTable (string HexString, TableString tableString)

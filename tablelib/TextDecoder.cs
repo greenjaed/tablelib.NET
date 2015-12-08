@@ -191,6 +191,20 @@ namespace TableLib
         }
 
         /// <summary>
+        /// Gets the decoded characters.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="hexBlock">The Hex block to decode</param>
+        /// <param name="endString">Signified the end of a string.</param>
+        /// <returns>The decoded string as an IEnumerable of a List of strings.</returns>
+        public IEnumerable<List<string>> GetAllDecodedChars(string tableName, byte[] hexBlock, string endString)
+        {
+            Table.OpenTable(tableName);
+            SetHexBlock(hexBlock);
+            return GetAllDecodedChars(endString);
+        }
+
+        /// <summary>
         /// Gets all decoded strings as lists of chars
         /// </summary>
         /// <param name="endString">The string which indicates the end of a string.</param>
@@ -386,7 +400,7 @@ namespace TableLib
         /// <param name="encoding">The name of the character encoding</param>
 		public bool OpenTable(string tableFileName, string encoding)
 		{
-			return Table.OpenTable(tableFileName, encoding);
+			return Table.OpenTable(tableFileName, Encoding.GetEncoding(encoding));
 		}
 
 	}

@@ -24,6 +24,7 @@ namespace TextScan
             {
                 {"l|length=", "the minimum length for a valid string.  Default is 5", l => validStringLength = Convert.ToInt32(l) },
                 {"e|encoding=", "the encoding of the table file (e.g. shift-jis).  Default is utf-8", e => encodingName = e },
+                {"o|output=", "the name of the file to write the text to.  Default is output.txt", o => outputName = o},
                 {"h|help", "show this message", h => showHelp = h != null}
             };
 
@@ -82,11 +83,6 @@ namespace TextScan
                 return;
             }
 
-            if (unparsedOptions.Count > 2)
-            {
-                outputName = unparsedOptions[2];
-            }
-
             var decoder = new TextDecoder();
             decoder.OpenTable(tableName, encodingName);
             decoder.SetHexBlock(File.ReadAllBytes(romName));
@@ -96,9 +92,8 @@ namespace TextScan
 
         private static void showUsage(OptionSet options)
         {
-            Console.WriteLine("Usage: TextScanner romName tableName [OPTIONS] outputFileName");
+            Console.WriteLine("Usage: TextScanner.exe romName tableName [OPTIONS]");
             Console.WriteLine("Scans a rom for strings with a minimal valid length and dumps them.");
-            Console.WriteLine("If no output file name is specified, output is written to output.txt.");
             Console.WriteLine();
             Console.WriteLine("Options:");
             options.WriteOptionDescriptions(Console.Out);
@@ -117,18 +112,25 @@ namespace TextScan
         private static void scanFile(TextDecoder decoder, int stringLength, string outFile, Encoding encoding)
         {
             int filePosition = 0;
-            using (StreamWriter writer = new StreamWriter(outFile, false, encoding))
-            {
-                foreach (var textString in decoder.GetDecodedStrings())
+            try {
+                using (StreamWriter writer = new StreamWriter(outFile, false, encoding))
                 {
-                    if (textString.TextString.Count >= stringLength)
+                    foreach (var textString in decoder.GetDecodedStrings())
                     {
-                        writer.WriteLine("Position: " + filePosition.ToString("X"));
-                        writer.WriteLine(string.Concat(textString.TextString));
-                        writer.WriteLine();
+                        if (textString.TextString.Count >= stringLength)
+                        {
+                            writer.WriteLine("Position: " + filePosition.ToString("X"));
+                            writer.WriteLine(string.Concat(textString.TextString));
+                            writer.WriteLine();
+                        }
+                        filePosition += textString.BytesRead + 1;
                     }
-                    filePosition += textString.BytesRead + 1;
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
             }
         }
     }

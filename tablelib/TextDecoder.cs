@@ -211,7 +211,7 @@ namespace TableLib
         }
 
         /// <summary>
-        /// Decodes a string as a list of chars
+        /// Decodes the entire hex block as a list of chars
         /// </summary>
         /// <returns>The decoded string as a list of chars</returns>
         public List<string> DecodeChars()
